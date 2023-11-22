@@ -1,5 +1,7 @@
 from roboflow import Roboflow
 import json
+import cv2
+cameraOutput = cv2.VideoCapture(0)
 rf = Roboflow(api_key="Jh3LRNFbdEZ8q7wqBpa2")
 project = rf.workspace().project("dom-aeber")
 model = project.version(2).model
@@ -21,12 +23,15 @@ prediction = model.predict("000082_jpg.rf.1f1f752c0069d5649108017e2d3c9b2c.jpg",
 
 print(prediction)
 
+localizacion = []
+
 for i in range(len(prediction)):
 
-    localizacion = {'x': int(prediction[i].get('width')) / 2 + int(prediction[i].get('x')), 'y': int(prediction[i].get('height')) / 2 + int(prediction[i].get('y'))}
+    localizacionI = int(prediction[i].get('width') / 2) + int(prediction[i].get('x')), int(prediction[i].get('height') / 2) + int(prediction[i].get('y'))
+    localizacion.append(str(localizacionI))
 
-    print ("Las coordenadas del obeto son: ", localizacion, """
-    Objeto nro: """, i)
+    print ("Las coordenadas del obeto son: ", localizacion[i], """
+    Objeto nro: """, i+1)
 
 
 print (localizacion)
