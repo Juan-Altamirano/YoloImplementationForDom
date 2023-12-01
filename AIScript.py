@@ -18,7 +18,6 @@ def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA): # 
         r = height / float(h)
         dim = (int(w * r), height)
 
-    # otherwise, the height is None
     else:
         # calculate the ratio of the width and construct the dimensions
         r = width / float(w)
@@ -39,13 +38,13 @@ while True:
 
     p+=1
     
-    ImgNewName = "Prediction number "+str(p+1)+".jpg"
+    ImgNewName = "Prediction number "+str(p)+".jpg"
 
     resized_frame = image_resize(frame, width = 640, height = 640)
 
     IAInput = cv2.imwrite('./images/Imagen_Nro_'+str(p)+'.png',resized_frame) # Esto guarda el frame guardado en la variable frame en la carpeta images como un archivo .jpg, para luego ser usado por la IA
 
-    InputRoute = './images/Imagen_Nro_'+str(p)+'.png' # Esto nomás es la ruta para la img, pq no me dejaba ponerla directamente en el model.predict, pq lo toma como más de 1 parámetro
+    InputRoute = './images/Imagen_Nro_'+str(p)+'.png' # Esto nomás es la ruta para la img, pq no me dejaba ponerla directamente en el model.predict, pq lo toma como más de 1 parámetro y se enoja
 
     # q se guarde la img con la bounding box y la prediccion
     model.predict(InputRoute, confidence=30, overlap=30).save(ImgNewName)
@@ -69,6 +68,28 @@ while True:
 
     if cv2.waitKey(1) == ord('q'):
         break
+
+    for i in localizacion:
+    # Adapting prediction results and location to thrust vectors to be sent to the Arduino, no sé por qué lo puse en inglés pero bueno
+        if localizacion.get("x") <= 213:
+            print("Girar a la izquierda")
+            # Imagino q los valores van a ir de 0 a 255, por lo que voy a mandarle al motor derecho algo tipo 200 y al izq 50, para que gire a la izq
+
+        elif localizacion.get("x") <= 426 and localizacion.get("x") > 213 and localizacion.get("y") >= 280:
+            print("Seguir derecho")
+            # Motor izq 200, motor derecho 200
+
+        elif localizacion.get("x") <= 426 and localizacion.get("x") > 213:
+            print("Seguir derecho")
+            # Motor izq 200, motor derecho 200
+        
+        elif localizacion.get("x") > 426:
+            print("Girar a la derecha")
+            # Motor izq 200, motor derecho 50
+
+
+    # Todavía tengo que hacer el orden de prioridad de los objetos, pero eso lo hago después, por ahora que solo se mueva en función del objeto más a la izq
+    # Después me gustaría hacer que si detecta múltiples objetos a la izq y no deja de girar, que después de cierto punto pare y sólo siga derecho, pero ta complejo eso
 
     time.sleep(3)
 
