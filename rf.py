@@ -1,40 +1,48 @@
 from roboflow import Roboflow
 import json
 import cv2
-cameraOutput = cv2.VideoCapture(0)
+import time
 rf = Roboflow(api_key="Jh3LRNFbdEZ8q7wqBpa2")
 project = rf.workspace().project("dom-aeber")
 model = project.version(2).model
+p=0
+cap = cv2.VideoCapture(0)
 
-# infer on a local image
-# print(model.predict("Ult_DS (109).jpg", confidence=30, overlap=30).json())
+while True:
+    ret, frame = cap.read()
+    if ret == False: 
+        print("No hay cámara probablemente")
+        break
 
-# coords = model.predict("Ult_DS (109).jpg", confidence=30, overlap=30).json().get('predictions')[0].get('x')
+    ImgNewName = "Prediction number "+str(p+1)+".jpg"
+    p += 1
 
-# visualize your prediction
-model.predict("000082_jpg.rf.1f1f752c0069d5649108017e2d3c9b2c.jpg", confidence=30, overlap=30).save("new prediction.jpg")
+    IAInput = cv2.imwrite('./images/Imagen_Nro_'+str(p)+'.png',frame) # Esto guarda el frame guardado en la variable frame en la carpeta images, para luego ser usado por la IA
 
-# infer on an image hosted elsewhere
-# print(model.predict("URL_OF_YOUR_IMAGE", hosted=True, confidence=40, overlap=30).json())
+    InputRoute = './images/Imagen_Nro_'+str(p)+'.png' # Esto nomás es la ruta para la img, pq no me dejaba ponerla directamente en el model.predict, pq lo toma como más de 1 parámetro
 
-# prediction = json.loads(str(model.predict("Ult_DS (94).jpg", confidence=30, overlap=30).json()))
+    # q se guarde la img con la bounding box y la prediccion
+    model.predict(InputRoute, confidence=30, overlap=30).save(ImgNewName)
 
-prediction = model.predict("000082_jpg.rf.1f1f752c0069d5649108017e2d3c9b2c.jpg", confidence=50, overlap=30).json().get('predictions')
+    prediction = model.predict(InputRoute, confidence=30, overlap=30).json().get('predictions')
 
-print(prediction)
+    print(prediction)
 
-localizacion = []
+    localizacion = []
 
-for i in range(len(prediction)):
+    for i in range(len(prediction)):
 
-    localizacionI = int(prediction[i].get('width') / 2) + int(prediction[i].get('x')), int(prediction[i].get('height') / 2) + int(prediction[i].get('y'))
-    localizacion.append(str(localizacionI))
+        localizacionI = int(prediction[i].get('width') / 2) + int(prediction[i].get('x')), int(prediction[i].get('height') / 2) + int(prediction[i].get('y'))
+        localizacion.append(str(localizacionI))
 
-    print ("Las coordenadas del obeto son: ", localizacion[i], """
-    Objeto nro: """, i+1)
+        print ("Las coordenadas del obeto son: ", localizacion[i], """
+        Objeto nro: """, i+1)
 
+        print (localizacion)
 
-print (localizacion)
+        # cv2.circle(frame, (int(localizacion.get('x')), int(localizacion.get('y'))), 5, (0, 0, 255), -1)
+
+    time.sleep(4)
 
 # Prioridades = sorted(localizacion.get['x'])
 

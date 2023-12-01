@@ -54,7 +54,7 @@ while True:
 
     print(prediction)
 
-    cv2.imshow('IAImgInput', frame)
+    cv2.imshow('IAImgInput', resized_frame)
 
     for i in range(len(prediction)):
 
@@ -65,12 +65,12 @@ while True:
 
         print (localizacion)
 
-        cv2.circle(frame, (int(localizacion.get('x')), int(localizacion.get('y'))), 5, (0, 0, 255), -1)
+        cv2.circle(resized_frame, (int(localizacion.get('x')), int(localizacion.get('y'))), 5, (0, 0, 255), -1)
 
     if cv2.waitKey(1) == ord('q'):
         break
 
-    time.sleep(4)
+    time.sleep(3)
 
 cv2.destroyAllWindows()
 
