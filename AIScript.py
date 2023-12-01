@@ -8,28 +8,19 @@ model = project.version(2).model
 p=0
 cap = cv2.VideoCapture(0)
 
-def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
-    # initialize the dimensions of the image to be resized and
-    # grab the image size
+def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA): # Esta función la uso para que el input que le doy a la IA sea correspondiente a las dimensiones de las imgs que se usó para entrenarla
     dim = None
-    (h, w) = image.shape[:2]
-
-    # if both the width and height are None, then return the
-    # original image
-    if width is None and height is None:
-        return image
+    (h, w) = image.shape[:2] # Esto es para que agarre el alto y ancho de la img
 
     # check to see if the width is None
     if width is None:
-        # calculate the ratio of the height and construct the
-        # dimensions
+        # calculate the ratio of the height and construct the dimensions
         r = height / float(h)
         dim = (int(w * r), height)
 
     # otherwise, the height is None
     else:
-        # calculate the ratio of the width and construct the
-        # dimensions
+        # calculate the ratio of the width and construct the dimensions
         r = width / float(w)
         dim = (width, int(h * r))
 
@@ -46,10 +37,13 @@ while True:
         print("Enchufá la cámara capo, o quizás la está usando otra aplicación (como cámara)")
         break
 
+    p+=1
+    
     ImgNewName = "Prediction number "+str(p+1)+".jpg"
-    p += 1
 
-    IAInput = cv2.imwrite('./images/Imagen_Nro_'+str(p)+'.png',frame) # Esto guarda el frame guardado en la variable frame en la carpeta images como un archivo .jpg, para luego ser usado por la IA
+    resized_frame = image_resize(frame, width = 640, height = 640)
+
+    IAInput = cv2.imwrite('./images/Imagen_Nro_'+str(p)+'.png',resized_frame) # Esto guarda el frame guardado en la variable frame en la carpeta images como un archivo .jpg, para luego ser usado por la IA
 
     InputRoute = './images/Imagen_Nro_'+str(p)+'.png' # Esto nomás es la ruta para la img, pq no me dejaba ponerla directamente en el model.predict, pq lo toma como más de 1 parámetro
 
