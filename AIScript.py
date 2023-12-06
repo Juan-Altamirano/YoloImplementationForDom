@@ -1,14 +1,12 @@
 from roboflow import Roboflow
-import json
 import cv2
 import time
+import mymodule
 rf = Roboflow(api_key="Jh3LRNFbdEZ8q7wqBpa2")
 project = rf.workspace().project("dom-aeber")
 model = project.version(2).model
 p=0
 cap = cv2.VideoCapture(0)
-localizacion = []
-direccion = ""
 
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA): # Esta función la uso para que el input que le doy a la IA sea correspondiente a las dimensiones de las imgs que se usó para entrenarla
     dim = None
@@ -31,6 +29,60 @@ def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA): # 
     # return the resized image
     return resized
 
+def ChangeThrusts(localizaciones):
+
+    ind = 0
+
+    if not localizaciones == []: 
+
+        for i in localizaciones:
+            ind += 1
+            # Adapting prediction results and location to thrust vectors to be sent to the Arduino, no sé por qué lo puse en inglés pero bueno
+
+            if i.get("x") <= 213:
+                direccion = 1 # izq
+                break
+                # Imagino q los valores van a ir de 0 a 255, por lo que voy a mandarle al motor derecho algo tipo 200 y al izq 50, para que gire a la izq
+
+            elif i.get("x") <= 426 and i.get("x") > 213 and i.get("y") >= 280:
+                direccion = 2 # alante
+                # Motor izq 200, motor derecho 200
+
+            elif i.get("x") <= 426 and i.get("x") > 213:
+                direccion = 2 # alante
+                # Motor izq 200, motor derecho 200
+        
+            elif i.get("x") > 426:
+                direccion = 3 # der
+                # Motor izq 200, motor derecho 50
+        
+        print(direccion)
+        
+    else: 
+        print("No se detectó ningún objeto")
+        direccion = 2 # alante
+    return direccion
+
+def find_leftmost_section(localizaciones):
+    left_count = 0
+    middle_count = 0
+    right_count = 0
+
+    for item in localizaciones:
+
+        if item.get("x") <= 213:
+            left_count += 1
+        elif item.get("x") <= 426:
+            middle_count += 1
+        else:
+            right_count += 1
+
+    counts = [left_count, middle_count, right_count]
+    max_index = counts.index(max(counts)) + 1
+
+    print(max_index)
+
+    return max_index
 
 while True:
     ret, frame = cap.read()
@@ -42,11 +94,11 @@ while True:
     
     ImgNewName = "Prediction number "+str(p)+".jpg"
 
+    InputRoute = './images/Image_'+str(p)+'.jpg'
+
     resized_frame = image_resize(frame, width = 640, height = 640)
 
-    IAInput = cv2.imwrite('./images/Imagen_Nro_'+str(p)+'.png',resized_frame) # Esto guarda el frame guardado en la variable frame en la carpeta images como un archivo .jpg, para luego ser usado por la IA
-
-    InputRoute = './images/Imagen_Nro_'+str(p)+'.png' # Esto nomás es la ruta para la img, pq no me dejaba ponerla directamente en el model.predict, pq lo toma como más de 1 parámetro y se enoja
+    cv2.imwrite(InputRoute, resized_frame) # Esto guarda el frame guardado en la variable frame en la carpeta images como un archivo .jpg, para luego ser usado por la IA
 
     # q se guarde la img con la bounding box y la prediccion
     model.predict(InputRoute, confidence=30, overlap=30).save(ImgNewName)
@@ -55,7 +107,12 @@ while True:
 
     print(prediction)
 
-    cv2.imshow('IAImgInput', resized_frame)
+    OutputImg = cv2.imread(ImgNewName, cv2.IMREAD_COLOR)
+
+    cv2.imshow('IAImgOutput', OutputImg)
+
+    if cv2.waitKey(1) == ord('q'):
+        break
 
     for i in range(len(prediction)):
 
@@ -66,40 +123,29 @@ while True:
 
         print (localizacion)
 
-        cv2.circle(resized_frame, (int(localizacion.get('x')), int(localizacion.get('y'))), 5, (0, 0, 255), -1)
+        # cv2.circle(resized_frame, (int(localizacion.get('x')), int(localizacion.get('y'))), 5, (0, 0, 255), -1)
 
-    if cv2.waitKey(1) == ord('q'):
-        break
+    direccion = find_leftmost_section(localizacion)
 
-    for i in localizacion:
-    # Adapting prediction results and location to thrust vectors to be sent to the Arduino, no sé por qué lo puse en inglés pero bueno
-        if localizacion.get("x") <= 213:
-            direccion = "izq"
-            print("Girar a la izquierda")
-            # Imagino q los valores van a ir de 0 a 255, por lo que voy a mandarle al motor derecho algo tipo 200 y al izq 50, para que gire a la izq
+    if direccion == 1:
+        print("Girando a la izquierda")
+        mymodule.ChangeLeftThrust(50)
+        mymodule.ChangeRightThrust(200)
 
-        elif localizacion.get("x") <= 426 and localizacion.get("x") > 213 and localizacion.get("y") >= 280:
-            direccion = "alante"
-            print("Seguir derecho")
-            # Motor izq 200, motor derecho 200
-
-        elif localizacion.get("x") <= 426 and localizacion.get("x") > 213:
-            direccion = "alante"
-            print("Seguir derecho")
-            # Motor izq 200, motor derecho 200
-        
-        elif localizacion.get("x") > 426:
-            direccion = "der"
-            print("Girar a la derecha")
-            # Motor izq 200, motor derecho 50
-        
-        print(direccion)
+    elif direccion == 2:
+        print("Avanzando")
+        mymodule.ChangeLeftThrust(200)
+        mymodule.ChangeRightThrust(200)
+    
+    elif direccion == 3:
+        print("Girando a la derecha")
+        mymodule.ChangeLeftThrust(200)
+        mymodule.ChangeRightThrust(50)
 
 
     # Todavía tengo que hacer el orden de prioridad de los objetos, pero eso lo hago después, por ahora que solo se mueva en función del objeto más a la izq
     # Después me gustaría hacer que si detecta múltiples objetos a la izq y no deja de girar, que después de cierto punto pare y sólo siga derecho, pero ta complejo eso
 
-    time.sleep(3)
+    time.sleep(1)
 
-cap.release()
 cv2.destroyAllWindows()
