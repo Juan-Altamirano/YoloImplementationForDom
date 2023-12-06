@@ -7,6 +7,8 @@ project = rf.workspace().project("dom-aeber")
 model = project.version(2).model
 p=0
 cap = cv2.VideoCapture(0)
+localizacion = []
+direccion = ""
 
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA): # Esta función la uso para que el input que le doy a la IA sea correspondiente a las dimensiones de las imgs que se usó para entrenarla
     dim = None
@@ -72,20 +74,26 @@ while True:
     for i in localizacion:
     # Adapting prediction results and location to thrust vectors to be sent to the Arduino, no sé por qué lo puse en inglés pero bueno
         if localizacion.get("x") <= 213:
+            direccion = "izq"
             print("Girar a la izquierda")
             # Imagino q los valores van a ir de 0 a 255, por lo que voy a mandarle al motor derecho algo tipo 200 y al izq 50, para que gire a la izq
 
         elif localizacion.get("x") <= 426 and localizacion.get("x") > 213 and localizacion.get("y") >= 280:
+            direccion = "alante"
             print("Seguir derecho")
             # Motor izq 200, motor derecho 200
 
         elif localizacion.get("x") <= 426 and localizacion.get("x") > 213:
+            direccion = "alante"
             print("Seguir derecho")
             # Motor izq 200, motor derecho 200
         
         elif localizacion.get("x") > 426:
+            direccion = "der"
             print("Girar a la derecha")
             # Motor izq 200, motor derecho 50
+        
+        print(direccion)
 
 
     # Todavía tengo que hacer el orden de prioridad de los objetos, pero eso lo hago después, por ahora que solo se mueva en función del objeto más a la izq
@@ -93,9 +101,5 @@ while True:
 
     time.sleep(3)
 
+cap.release()
 cv2.destroyAllWindows()
-
-
-# Prioridades = sorted(localizacion.get['x'])
-
-# print(Prioridades)
